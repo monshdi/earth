@@ -43,26 +43,34 @@ scene.add(mesh);
 
 const clock = new THREE.Clock();
 
-const mouseCoords = {
-  x: 0,
-  y: 0,
-}
+const raycaster = new THREE.Raycaster();
+const cursor = new THREE.Vector2(0, 0);
 
 window.addEventListener('mousemove', (event) => {
-  mouseCoords.x = event.clientX / window.innerWidth - 0.5
-  mouseCoords.y = event.clientY / window.innerHeight - 0.5
+  cursor.x = event.clientX / window.innerWidth * 2 - 1
+  cursor.y = -(event.clientY / window.innerHeight) * 2 + 1
 });
+
 
 
 function draw() {
   const time = clock.getElapsedTime();
-
   // mesh.rotation.y = time
   // mesh.position.y = Math.abs(Math.sin(time * Math.PI));
   // mesh.position.x = Math.cos(time * Math.PI);
 
-  camera.position.x = -mouseCoords.x;
-  camera.position.y = mouseCoords.y;
+  raycaster.setFromCamera(cursor, camera);
+  const intersects = raycaster.intersectObjects(scene.children);
+  console.log(intersects);
+
+  scene.children.forEach((item) => item.material.color.set(0xff0000));
+
+  intersects.forEach((entry, i) => {
+    entry.object.material.color.set(0xf3f3f3);
+  })
+
+
+
 
   controls.update();
   renderer.render(scene, camera);
