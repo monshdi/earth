@@ -1,72 +1,84 @@
 import * as THREE from 'three';
-import { OrbitControls} from "three/addons/controls/OrbitControls.js";
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import SplineLoader from '@splinetool/loader';
 
-const sizes = {
-  width: window.innerWidth,
-  height: window.innerHeight,
-};
+// camera
+const camera = new THREE.PerspectiveCamera(14, window.innerWidth / window.innerWidth, 1, 10000);
+camera.position.set(1, 60, 1000);
 
-window.addEventListener('resize', () => {
-  sizes.width = window.innerWidth;
-  sizes.height = window.innerHeight;
-
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
-
-  renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-});
-
-const canvas = document.getElementById('canvas');
-
+// scene
 const scene = new THREE.Scene();
 
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100);
-camera.position.z = 5;
+// Texture
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load('/texture.png')
 
-const renderer = new THREE.WebGLRenderer({
-  canvas,
-});
-renderer.setSize(sizes.width, sizes.height);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Loader
+const loader = new FBXLoader();
+loader.load(
+  '/Mic_scene.fbx',
+  (object) => {
+    object.position.x = 100
+    object.traverse((child) => {
+      if (child.isMesh) {
+        console.log(child);
+        child.material = new THREE.MeshBasicMaterial({
+          map: texture,
+        })
+      }
+    });
+
+    scene.add(object);
+  },
+  (progress) => console.log(progress),
+  (error) => console.log(error),
+)
+
+const splineLoader = new SplineLoader();
+splineLoader.load(
+  '/spline_scene.spline',
+  (object) => {
+    object.traverse((child) => {
+      if (child.isMesh) {
+        console.log(child);
+        child.material = new THREE.MeshBasicMaterial({
+          map: texture,
+        })
+      }
+    });
+
+    scene.add(object);
+  },
+  (progres) => console.log(progres),
+  (error) => console.log(error)
+)
+
+// renderer
+const renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setAnimationLoop(animate);
+document.body.appendChild(renderer.domElement);
+
+// scene settings
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+
+renderer.setClearAlpha(0);
+
+// orbit controls
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.update();
+controls.enableDamping = true;
+controls.dampingFactor = 0.125;
 
-const geometry = new THREE.BoxGeometry(1, 1,  1);
-const material = new THREE.MeshBasicMaterial({
-  color: 0xff0000,
-  // wireframe: true,
-});
-const mesh = new THREE.Mesh(geometry, material);
+window.addEventListener('resize', onWindowResize);
 
-scene.add(mesh);
-
-const clock = new THREE.Clock();
-
-const mouseCoords = {
-  x: 0,
-  y: 0,
+function onWindowResize() {
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-window.addEventListener('mousemove', (event) => {
-  mouseCoords.x = event.clientX / window.innerWidth - 0.5
-  mouseCoords.y = event.clientY / window.innerHeight - 0.5
-});
-
-
-function draw() {
-  const time = clock.getElapsedTime();
-
-  // mesh.rotation.y = time
-  // mesh.position.y = Math.abs(Math.sin(time * Math.PI));
-  // mesh.position.x = Math.cos(time * Math.PI);
-
-  camera.position.x = -mouseCoords.x;
-  camera.position.y = mouseCoords.y;
-
+function animate(time) {
   controls.update();
   renderer.render(scene, camera);
-  window.requestAnimationFrame(draw);
 }
-
-draw();
