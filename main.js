@@ -1,2 +1,3 @@
 import './style.css'
-import './Sphere';
+import './SphereTHREE.js';
+// import './Sphere.js';
