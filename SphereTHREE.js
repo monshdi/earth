@@ -1,10 +1,9 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 import {FBXLoader} from 'three/examples/jsm/loaders/FBXLoader';
-import SplineLoader from '@splinetool/loader';
 
 // camera
-const camera = new THREE.PerspectiveCamera(14, window.innerWidth / window.innerWidth, 1, 10000);
+const camera = new THREE.PerspectiveCamera(10, window.innerWidth / window.innerHeight, 1, 10000);
 camera.position.set(0, 0, 1);
 
 const cursor = new THREE.Vector2();
@@ -15,21 +14,23 @@ const scene = new THREE.Scene();
 
 // Texture
 const textureLoader = new THREE.TextureLoader();
-const texture = textureLoader.load('/texture.png')
+const texture = textureLoader.load('/Backed_Beauty.png')
+const matcap = textureLoader.load('/matcap_test_light.png')
 
 let animateObject;
 
 // Loader
 const loader = new FBXLoader();
 loader.load(
-    '/Mic_scene.fbx',
+    '/Mic_scene_01.fbx',
     (object) => {
         // object.position.x = 100
-        object.scale.setScalar(0.001);
+        object.scale.setScalar(0.0015);
         object.traverse((child) => {
             if (child.isMesh) {
-                child.material = new THREE.MeshBasicMaterial({
+                child.material = new THREE.MeshMatcapMaterial({
                     map: texture,
+                    matcap,
                 })
             }
         });
@@ -42,25 +43,6 @@ loader.load(
     (progress) => console.log(progress),
     (error) => console.log(error),
 )
-
-// const splineLoader = new SplineLoader();
-// splineLoader.load(
-//   '/spline_scene.spline',
-//   (object) => {
-//     object.traverse((child) => {
-//       if (child.isMesh) {
-//         console.log(child);
-//         child.material = new THREE.MeshBasicMaterial({
-//           map: texture,
-//         })
-//       }
-//     });
-//
-//     scene.add(object);
-//   },
-//   (progres) => console.log(progres),
-//   (error) => console.log(error)
-// )
 
 // renderer
 const renderer = new THREE.WebGLRenderer({antialias: true});
@@ -94,10 +76,10 @@ window.addEventListener('mousemove', (e) => {
 })
 
 
-function animate(time) {
+function animate() {
 
     camera.position.x = Math.sin(cursor.x * Math.PI) * 3;
-    camera.position.z = Math.cos(cursor.x * Math.PI) * 3;
+    camera.position.z = Math.cos(cursor.x  * Math.PI) * 3;
     camera.position.y = cursor.y * 5;
 
     //
