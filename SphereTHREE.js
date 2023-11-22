@@ -30,40 +30,70 @@ let animateObject;
 
 // Loader
 const loader = new FBXLoader();
-// loader.load(
-//     '/Mic_scene_01.fbx',
-//     (object) => {
-//         // object.position.x = 100
-//         object.scale.setScalar(0.0015)
-//         object.traverse((child) => {
-//             if (child.isMesh) {
-//                 child.material = new THREE.MeshMatcapMaterial({
-//                     map: texture,
-//                     matcap,
-//                 })
-//             }
-//         });
-//
-//         // object.position.x = 0.2;
-//         animateObject = object;
-//
-//         scene.add(object);
-//     },
-//     (progress) => console.log(progress),
-//     (error) => console.log(error),
-// )
+let points;
+loader.load(
+    '/Mic_scene_01.fbx',
+    (object) => {
+      console.log(object);
+      points = getAllFloat32Arrays(object);
+        // object.position.x = 100
+        // object.scale.setScalar(0.0015)
+        // object.traverse((child) => {
+        //     if (child.isMesh) {
+        //       points.push(child.geometry.attributes.position.array);
+                // child.material = new THREE.MeshMatcapMaterial({
+                //     map: texture,
+                //     matcap,
+                // })
+        //     }
+        // });
+        //
+        // // object.position.x = 0.2;
+        // animateObject = object;
+        //
+        // scene.add(object);
+      createPoints();
+    },
+    (progress) => console.log(progress),
+    (error) => console.log(error),
+)
 
-fetch(`/dots.ta`).then((response) => {
-  return response.arrayBuffer();
-}).then((buffer) => {
-  console.log('buffer', buffer, typeof buffer)
-  DOTS_BUFFER = buffer;
-  createPoints();
-  // super.emit('loaded', 'dots');
-}).catch((err) => {
-  console.error(err);
-  // super.emit('loaded', 'dots');
-});
+function getAllFloat32Arrays(object) {
+  const arrays = [];
+
+  object.traverse((child) => {
+    if (child.isMesh && child.geometry.attributes.position) {
+      const positions = child.geometry.attributes.position.array;
+      arrays.push(positions);
+    }
+  });
+
+  const totalLength = arrays.reduce((total, arr) => total + arr.length, 0);
+  const combinedArray = new Float32Array(totalLength);
+  let offset = 0;
+
+  arrays.forEach((arr) => {
+    combinedArray.set(arr, offset);
+    offset += arr.length;
+  });
+
+  return combinedArray;
+}
+
+// Использование функции
+
+
+// fetch(`/dots.ta`).then((response) => {
+//   return response.arrayBuffer();
+// }).then((buffer) => {
+//   console.log('buffer', buffer, typeof buffer)
+//   DOTS_BUFFER = buffer;
+//   createPoints();
+//   // super.emit('loaded', 'dots');
+// }).catch((err) => {
+//   console.error(err);
+//   // super.emit('loaded', 'dots');
+// });
 
 // renderer
 const renderer = new THREE.WebGLRenderer({antialias: true});
@@ -103,7 +133,7 @@ const pointsGeometry = new BufferGeometry();
 
 function createPoints() {
   // TODO: refactor
-  const vertices = new Float32Array(DOTS_BUFFER);
+  const vertices = new Float32Array(points);
   console.log(vertices);
   pointsGeometry.setAttribute('position', new BufferAttribute(vertices, 3));
   const amount = pointsGeometry.attributes.position.count;
