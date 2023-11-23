@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 // import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, Clock, Color, ImageLoader, MathUtils, MeshBasicMaterial,
+  AdditiveBlending, AxesHelper, BufferAttribute, BufferGeometry, Clock, Color, ImageLoader, MathUtils,
+  MeshBasicMaterial,
   MeshToonMaterial, Points, PointsMaterial,
-  ShaderMaterial, Vector3
+  ShaderMaterial, Vector2, Vector3, Vector4
 } from 'three';
 import dotsVertexShader from '/public/dots-vertex.glsl';
 import dotsFragmentShader from '/public/dots-fragment.glsl';
@@ -15,19 +16,22 @@ let POINTS = [];
 
 // camera
 const camera = new THREE.PerspectiveCamera(10, window.innerWidth / window.innerHeight, 1, 10000);
-camera.position.set(0, 0, 50);
+camera.position.set(3, 0.5, 30);
+
+const helpers = new AxesHelper();
 
 const cursor = new THREE.Vector2();
 
 
 // scene
 const scene = new THREE.Scene();
+// scene.add(helpers);
 
 // Texture
 const textureLoader = new THREE.TextureLoader();
 // const texture = textureLoader.load('/Backed_Beauty.png')
 // const matcap = textureLoader.load('/matcap_test_light.png')
-const spark = textureLoader.load('/spark.png')
+const spark = textureLoader.load('/spark3.png')
 
 let animateObject;
 
@@ -57,6 +61,10 @@ loader.load(
         let vertexPositions;
         const modelVerticies = [];
         const step = i === 0 ? 1 : 4;
+        if (i === 0) {
+          model.position.z = -24
+        }
+        model.scale.setScalar(1.4)
         model.traverse((child) => {
           if (child.isMesh) {
             const geometry = child.geometry;
@@ -137,11 +145,11 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 // renderer.setClearColor(0x2980B9);
 
-// renderer.setClearAlpha(0);
+renderer.setClearAlpha(0);
 
 // orbit controls
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
+// controls.enableDamping = true;
 // controls.dampingFactor = 0.125;
 
 const pixelRatio = renderer.getPixelRatio();
@@ -153,30 +161,25 @@ function createPoints(points, model, pointsAmount) {
   // TODO: refactor
   const pointsGeometry = new BufferGeometry().setFromPoints(points);
   const colors = new Float32Array(pointsAmount * 3);
+  const alfa = new Float32Array(pointsAmount * 2);
   const sizes = new Float32Array(pointsAmount);
   const sizesChange = new Int8Array(pointsAmount);
 
-  const palette = [
-    new Color(0x04040f),
-    new Color(0x00a8e2),
-    new Color(0x004c97),
-  ]
+  // const palette = [
+  //   new Color(0x04040f),
+  //   new Color(0x00a8e2),
+  //   new Color(0x004c97),
+  // ]
 
   for (let i = 0; i < pointsAmount; i++) {
-    const color = new Color(0xffffff);
-
-    if (i % 50 === 0) {
-      color.copy(new Color(0xffbf00));
-      color.toArray(colors, i * 3);
-    } else {
-      color.copy(palette[MathUtils.randInt(0, palette.length - 1)]);
-      color.toArray(colors, i * 3);
-    }
-
+    const color = new Color(0xffff00);
+    color.toArray(colors, i * 3);
+    alfa[i] = Math.random();
     sizes[i] = MathUtils.randFloat(dotMinSize, dotMaxSize);
     sizesChange[i] = Math.random() > 0.5 ? 1 : -1;
   }
 
+  pointsGeometry.setAttribute('customAlpha', new BufferAttribute(alfa, 1));
   pointsGeometry.setAttribute('customColor', new BufferAttribute(colors, 3));
   pointsGeometry.setAttribute('size', new BufferAttribute(sizes, 1));
   pointsGeometry.setAttribute('sizeChange', new BufferAttribute(sizesChange, 3));
@@ -216,7 +219,7 @@ function animate() {
   if (canAnimate) {
     POINTS.forEach((point, i) => {
       const geometry = point.geometry;
-      point.rotation[i === 0 ? 'z' : 'y'] += delta / 10 ;
+      point.rotation[i === 0 ? 'z' : 'y'] += delta / 50 ;
       const sizes = geometry.attributes.size.array;
       const sizesChanges = geometry.attributes.sizeChange.array;
       const amount = geometry.attributes.position.count;
@@ -235,10 +238,8 @@ function animate() {
 
       geometry.attributes.size.needsUpdate = true;
     })
-
-
   }
 
-  controls.update();
+  // controls.update();
   renderer.render(scene, camera);
 }
