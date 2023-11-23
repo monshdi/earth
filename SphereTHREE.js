@@ -56,21 +56,24 @@ loader.load(
       array.forEach((model, i) => {
         let vertexPositions;
         const modelVerticies = [];
+        const step = i === 0 ? 1 : 4;
         model.traverse((child) => {
           if (child.isMesh) {
-            const childName = child.name.includes('DNA') ? 'DNA' : 'COVID';
             const geometry = child.geometry;
             geometry.computeVertexNormals();
-            geometry.center();
-            // geometry.scale(0.1, 0.1, 0.1);
-            child.visible = false;
 
+            child.visible = false;
             vertexPositions = geometry.attributes.position;
-            for (let i = 0; i < vertexPositions.count; i++) {
+            for (let i = 0; i < vertexPositions.count; i+=step) {
               const vertex = new Vector3();
               vertex.fromBufferAttribute(vertexPositions, i);
               modelVerticies.push(vertex);
             }
+
+            child.material = new MeshBasicMaterial({
+              color: new Color(0xff0000),
+              wireframe: true,
+            });
           }
         })
 
@@ -186,7 +189,7 @@ function createPoints(points, model, pointsAmount) {
   model.add(point);
   POINTS.push(point);
   canAnimate = true;
-  console.log(POINTS);
+  // console.log(POINTS);
 }
 
 
