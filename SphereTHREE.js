@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-// import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import {
   AdditiveBlending, AxesHelper, BufferAttribute, BufferGeometry, Clock, Color, ImageLoader, MathUtils,
   MeshBasicMaterial,
@@ -52,51 +52,123 @@ const pointsMaterial = new ShaderMaterial({
 });
 
 loader.load(
-    '/Vector_Scene.gltf',
-    (object) => {
-      let array = [...object.scene.children[0].children];
-      array = array.filter((item) => item.name !== 'CAMERA');
+  '/Vector_Scene.gltf',
+  (object) => {
+    let array = [...object.scene.children[0].children];
+    array = array.filter((item) => item.name !== 'CAMERA');
 
-      array.forEach((model, i) => {
-        let vertexPositions;
-        const modelVerticies = [];
-        const step = i === 0 ? 1 : 4;
-        if (i === 0) {
-          model.position.z = -24
-        }
-        model.scale.setScalar(1.4)
-        model.traverse((child) => {
-          if (child.isMesh) {
-            const geometry = child.geometry;
-            geometry.computeVertexNormals();
+    let verticies = [];
 
-            child.visible = false;
-            vertexPositions = geometry.attributes.position;
-            for (let i = 0; i < vertexPositions.count; i+=step) {
-              const vertex = new Vector3();
-              vertex.fromBufferAttribute(vertexPositions, i);
-              modelVerticies.push(vertex);
-            }
+    array.forEach((model, i) => {
+      const step = i === 0 ? 1 : 4;
+      if (i === 0) {
+        model.position.z = -24
+      }
+      model.scale.setScalar(1.4)
+      model.traverse((child) => {
+        if (child.isMesh) {
+          const geometry = child.geometry;
+          geometry.computeVertexNormals();
 
-            child.material = new MeshBasicMaterial({
-              color: new Color(0xff0000),
-              wireframe: true,
-            });
+          child.visible = false;
+          const vertexPositions = geometry.attributes.position;
+          const childVerticies = [];
+          for (let i = 0; i < vertexPositions.count; i+=step) {
+            const vertex = new Vector3();
+            vertex.fromBufferAttribute(vertexPositions, i);
+            childVerticies.push(vertex);
           }
-        })
 
-        if (i === 0) {
-          model.rotation.z = Math.PI / 2;
+          verticies = {
+            ...verticies,
+            [child.name]: childVerticies,
+          };
+          child.material = new MeshBasicMaterial({
+            color: new Color(0xff0000),
+            wireframe: true,
+          });
         }
-
-        createPoints(modelVerticies, model, vertexPositions.count)
-        scene.add(model);
       })
-    },
-    (progress) => console.log(progress),
-    (error) => console.log(error),
+
+      if (i === 0) {
+        model.rotation.z = Math.PI / 2;
+      }
+
+      // createPoints(modelVerticies, model, vertexPositions.count)
+      console.log(verticies);
+      // sendData(verticies);
+      scene.add(model);
+    })
+  },
+  (progress) => console.log(progress),
+  (error) => console.log(error),
 )
 
+const sendData = (data) => {
+  fetch('http://localhost:5000/parse', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data),
+  })
+}
+
+// loader.load(
+//     '/Vector_Scene.fbx',
+//     (fbx) => {
+//       const childs = [...fbx.children];
+//       console.log(childs);
+//       const models = childs.filter((child) => child.name.includes('point'))
+//       models.forEach((model) => {
+//           model.traverse((child) => {
+//             if (child.isMesh) {
+//               child.material = new MeshBasicMaterial({ color: 'red' })
+//             }
+//           });
+//           scene.add(model);
+//       });
+      // let array = [...object.scene.children[0].children];
+      // array = array.filter((item) => item.name !== 'CAMERA');
+      //
+      // array.forEach((model, i) => {
+      //   let vertexPositions;
+      //   const modelVerticies = [];
+      //   const step = i === 0 ? 1 : 4;
+      //   if (i === 0) {
+      //     model.position.z = -24
+      //   }
+      //   model.scale.setScalar(1.4)
+      //   model.traverse((child) => {
+      //     if (child.isMesh) {
+      //       const geometry = child.geometry;
+      //       geometry.computeVertexNormals();
+      //
+      //       child.visible = false;
+      //       vertexPositions = geometry.attributes.position;
+      //       for (let i = 0; i < vertexPositions.count; i+=step) {
+      //         const vertex = new Vector3();
+      //         vertex.fromBufferAttribute(vertexPositions, i);
+      //         modelVerticies.push(vertex);
+      //       }
+      //
+      //       child.material = new MeshBasicMaterial({
+      //         color: new Color(0xff0000),
+      //         wireframe: true,
+      //       });
+      //     }
+      //   })
+      //
+      //   if (i === 0) {
+      //     model.rotation.z = Math.PI / 2;
+      //   }
+      //
+      //   createPoints(modelVerticies, model, vertexPositions.count)
+      //   scene.add(model);
+//       // })
+//     },
+//     (progress) => console.log(progress),
+//     (error) => console.log(error),
+// )
+//
 // function getAllFloat32Arrays(object) {
 //   const arrays = [];
 //
